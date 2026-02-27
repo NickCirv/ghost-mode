@@ -1,0 +1,4 @@
+node_modules/
+.ghost-config.json
+*.log
+.DS_Store

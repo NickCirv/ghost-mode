@@ -1,0 +1,34 @@
+{
+  "name": "ghost-mode",
+  "version": "1.0.0",
+  "description": "Invisible AI pair programmer — silent watchers that whisper when you need it",
+  "type": "module",
+  "bin": {
+    "ghost-mode": "./bin/ghost.js"
+  },
+  "main": "./src/index.js",
+  "scripts": {
+    "start": "node bin/ghost.js"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "fs-extra": "^11.2.0"
+  },
+  "keywords": [
+    "claude-code",
+    "hooks",
+    "ai",
+    "pair-programming",
+    "developer-tools"
+  ],
+  "author": "NickCirv",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NickCirv/ghost-mode"
+  }
+}
