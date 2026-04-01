@@ -5,8 +5,8 @@
       <stop offset="100%" stop-color="#161B22"/>
     </linearGradient>
     <linearGradient id="accent" x1="0" y1="0" x2="400" y2="0">
-      <stop offset="0%" stop-color="#94A3B8"/>
-      <stop offset="100%" stop-color="#94A3B800"/>
+      <stop offset="0%" stop-color="#FB923C"/>
+      <stop offset="100%" stop-color="#FB923C00"/>
     </linearGradient>
     <filter id="glow">
       <feGaussianBlur stdDeviation="20" result="blur"/>
@@ -22,34 +22,14 @@
       <feComposite in="noisy" in2="SourceGraphic" operator="in"/>
     </filter>
   </defs>
-
-  <!-- Background -->
   <rect width="1280" height="640" fill="url(#bg)"/>
-
-  <!-- Noise texture overlay -->
   <rect width="1280" height="640" filter="url(#noise)" opacity="0.03"/>
-
-  <!-- Accent glow orb -->
-  <circle cx="200" cy="320" r="300" fill="#94A3B8" opacity="0.05" filter="url(#glow)"/>
-
-  <!-- Top accent line -->
+  <circle cx="200" cy="320" r="300" fill="#FB923C" opacity="0.05" filter="url(#glow)"/>
   <rect x="0" y="0" width="1280" height="3" fill="url(#accent)"/>
-
-  <!-- Icon -->
   <text x="640" y="220" font-size="80" text-anchor="middle" dominant-baseline="middle">👻</text>
-
-  <!-- Repo name -->
   <text x="640" y="320" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', monospace" font-size="64" font-weight="bold" fill="#E6EDF3" text-anchor="middle" dominant-baseline="middle" letter-spacing="-2">ghost-mode</text>
-
-  <!-- Tagline -->
-  <text x="640" y="390" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="24" fill="#8B949E" text-anchor="middle" dominant-baseline="middle">Invisible AI pair programmer</text>
-
-  <!-- Bottom bar -->
-  <rect x="540" y="440" width="200" height="2" fill="#94A3B8" opacity="0.4"/>
-
-  <!-- "Powered by Claude Code" -->
+  <text x="640" y="390" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="24" fill="#8B949E" text-anchor="middle" dominant-baseline="middle">Deliver context-aware AI code suggestions. Operates silently withou...</text>
+  <rect x="540" y="440" width="200" height="2" fill="#FB923C" opacity="0.4"/>
   <text x="640" y="500" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="16" fill="#484F58" text-anchor="middle" dominant-baseline="middle">Powered by Claude Code</text>
-
-  <!-- Author -->
   <text x="640" y="540" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif" font-size="14" fill="#30363D" text-anchor="middle" dominant-baseline="middle">by NickCirv</text>
 </svg>
