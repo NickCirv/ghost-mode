@@ -26,96 +26,52 @@ function scriptPath(name) {
   return join(__dir, 'scripts', name)
 }
 
-// Hooks active per mode
+// The three whisper hooks, cheapest first. All are PostToolUse hooks on file
+// edits: they read the hook payload Claude Code pipes to stdin (tool_name,
+// tool_input.file_path, hook_event_name) and warn via JSON systemMessage on
+// exit 0. None of them ever exits 2, so nothing is ever blocked.
+export const GHOST_SCRIPTS = [
+  'secret-whisper.mjs',
+  'console-log-whisper.mjs',
+  'type-error-whisper.mjs',
+]
+
+// Hooks active per mode. type-error runs a full `tsc --noEmit` on every TS
+// edit, so it is reserved for aggressive mode.
 const HOOK_MODES = {
-  aggressive: ['console-log', 'type-error', 'import', 'security', 'dangerous-command'],
-  balanced:   ['security', 'type-error', 'dangerous-command', 'console-log'],
-  subtle:     ['security', 'dangerous-command'],
+  subtle: ['secret-whisper.mjs'],
+  balanced: ['secret-whisper.mjs', 'console-log-whisper.mjs'],
+  aggressive: ['secret-whisper.mjs', 'console-log-whisper.mjs', 'type-error-whisper.mjs'],
 }
 
-function makePostToolHook(id, matcher, command) {
-  return {
-    matcher,
-    hooks: [
-      {
-        type: 'command',
-        command,
-      },
-    ],
-    // ghost identifier so we can remove cleanly
-    _ghost: id,
-  }
-}
+// Identifies a hook entry this tool owns, in any version's format, so
+// install/uninstall/status stay idempotent across upgrades. Old releases
+// (pre-2.0) registered *.sh scripts with a $CLAUDE_TOOL_INPUT_* env var
+// contract that Claude Code never provided; they are matched here so an
+// upgrade removes them.
+const GHOST_COMMAND = /ghost-mode[\\/](src[\\/])?scripts[\\/][\w-]+\.(mjs|sh)/
 
-function makePreToolHook(id, matcher, command) {
-  return {
-    matcher,
-    hooks: [
-      {
-        type: 'command',
-        command,
-      },
-    ],
-    _ghost: id,
-  }
+export function isGhostEntry(entry) {
+  if (!entry || typeof entry !== 'object') return false
+  if (entry._ghost) return true // legacy marker from v1.x installs
+  const hooks = Array.isArray(entry.hooks) ? entry.hooks : []
+  return hooks.some((h) => typeof h?.command === 'string' && GHOST_COMMAND.test(h.command))
 }
 
 export function buildHooks(mode) {
   const active = HOOK_MODES[mode] || HOOK_MODES['balanced']
-  const scriptsDir = scriptPath('')
 
-  const postToolUse = []
-  const preToolUse = []
+  // Matcher filters on tool_name. Edit covers in-place edits, Write covers
+  // new files, MultiEdit kept for older Claude Code versions.
+  const postToolUse = active.map((script) => ({
+    matcher: 'Edit|Write|MultiEdit',
+    hooks: [
+      {
+        type: 'command',
+        command: `node "${scriptPath(script)}"`,
+      },
+    ],
+  }))
 
-  if (active.includes('console-log')) {
-    postToolUse.push(
-      makePostToolHook(
-        'ghost-console-log',
-        'Edit|Write|MultiEdit',
-        `bash "${join(scriptsDir, 'console-log-check.sh')}" "$CLAUDE_TOOL_INPUT_FILE_PATH" 2>/dev/null || true`
-      )
-    )
-  }
-
-  if (active.includes('type-error')) {
-    postToolUse.push(
-      makePostToolHook(
-        'ghost-type-error',
-        'Edit|Write|MultiEdit',
-        `bash "${join(scriptsDir, 'type-check.sh')}" "$CLAUDE_TOOL_INPUT_FILE_PATH" 2>/dev/null || true`
-      )
-    )
-  }
-
-  if (active.includes('import')) {
-    postToolUse.push(
-      makePostToolHook(
-        'ghost-import',
-        'Edit|Write|MultiEdit',
-        `bash "${join(scriptsDir, 'unused-import-check.sh')}" "$CLAUDE_TOOL_INPUT_FILE_PATH" 2>/dev/null || true`
-      )
-    )
-  }
-
-  if (active.includes('security')) {
-    postToolUse.push(
-      makePostToolHook(
-        'ghost-security',
-        'Edit|Write|MultiEdit',
-        `bash "${join(scriptsDir, 'secret-scan.sh')}" "$CLAUDE_TOOL_INPUT_FILE_PATH" 2>/dev/null || true`
-      )
-    )
-  }
-
-  if (active.includes('dangerous-command')) {
-    preToolUse.push(
-      makePreToolHook(
-        'ghost-dangerous-command',
-        'Bash',
-        `bash "${join(scriptsDir, 'dangerous-command-check.sh')}" "$CLAUDE_TOOL_INPUT_COMMAND" 2>/dev/null || true`
-      )
-    )
-  }
-
-  return { postToolUse, preToolUse }
+  return { postToolUse }
 }

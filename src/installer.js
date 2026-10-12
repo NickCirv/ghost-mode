@@ -1,58 +1,66 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join } from 'path'
-import { buildHooks, writeConfig } from './hooks.js'
+import { buildHooks, writeConfig, isGhostEntry } from './hooks.js'
 
-const SETTINGS_PATH = join(process.cwd(), '.claude', 'settings.json')
-const CLAUDE_DIR = join(process.cwd(), '.claude')
+function settingsPath(cwd = process.cwd()) {
+  return join(cwd, '.claude', 'settings.json')
+}
 
-function readSettings() {
-  if (!existsSync(SETTINGS_PATH)) {
+function readSettings(cwd) {
+  const p = settingsPath(cwd)
+  if (!existsSync(p)) {
     return {}
   }
   try {
-    return JSON.parse(readFileSync(SETTINGS_PATH, 'utf8'))
+    return JSON.parse(readFileSync(p, 'utf8'))
   } catch {
     return {}
   }
 }
 
-function saveSettings(settings) {
-  if (!existsSync(CLAUDE_DIR)) {
-    mkdirSync(CLAUDE_DIR, { recursive: true })
+function saveSettings(settings, cwd = process.cwd()) {
+  const dir = join(cwd, '.claude')
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true })
   }
-  writeFileSync(SETTINGS_PATH, JSON.stringify(settings, null, 2))
+  writeFileSync(settingsPath(cwd), JSON.stringify(settings, null, 2))
 }
 
 function stripGhostHooks(hookArray) {
   if (!Array.isArray(hookArray)) return []
-  return hookArray.filter((h) => !h._ghost)
+  return hookArray.filter((h) => !isGhostEntry(h))
 }
 
-export async function install(mode = 'balanced') {
+export async function install(mode = 'balanced', cwd = process.cwd()) {
   writeConfig({ mode })
 
-  const settings = readSettings()
-  const { postToolUse, preToolUse } = buildHooks(mode)
+  const settings = readSettings(cwd)
+  const { postToolUse } = buildHooks(mode)
 
-  // Strip any existing ghost hooks before re-inserting
+  // Strip any existing ghost hooks (any version) before re-inserting
   const existingPost = stripGhostHooks(settings.hooks?.PostToolUse || [])
   const existingPre = stripGhostHooks(settings.hooks?.PreToolUse || [])
 
   settings.hooks = {
     ...(settings.hooks || {}),
     PostToolUse: [...existingPost, ...postToolUse],
-    PreToolUse: [...existingPre, ...preToolUse],
+  }
+  // v1.x also wrote PreToolUse entries; keep only the non-ghost ones.
+  if (existingPre.length > 0) {
+    settings.hooks.PreToolUse = existingPre
+  } else {
+    delete settings.hooks.PreToolUse
   }
 
-  saveSettings(settings)
+  saveSettings(settings, cwd)
 }
 
-export async function uninstall() {
-  if (!existsSync(SETTINGS_PATH)) {
+export async function uninstall(cwd = process.cwd()) {
+  if (!existsSync(settingsPath(cwd))) {
     return
   }
 
-  const settings = readSettings()
+  const settings = readSettings(cwd)
 
   if (settings.hooks) {
     settings.hooks.PostToolUse = stripGhostHooks(settings.hooks.PostToolUse || [])
@@ -64,5 +72,14 @@ export async function uninstall() {
     if (Object.keys(settings.hooks).length === 0) delete settings.hooks
   }
 
-  saveSettings(settings)
+  saveSettings(settings, cwd)
+}
+
+export function isInstalled(cwd = process.cwd()) {
+  if (!existsSync(settingsPath(cwd))) return false
+  const settings = readSettings(cwd)
+  const hooks = settings.hooks || {}
+  return Object.values(hooks).some(
+    (arr) => Array.isArray(arr) && arr.some((h) => isGhostEntry(h))
+  )
 }

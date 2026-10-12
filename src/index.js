@@ -1,9 +1,7 @@
 import { Command } from 'commander'
 import chalk from 'chalk'
-import { install, uninstall } from './installer.js'
+import { install, uninstall, isInstalled } from './installer.js'
 import { readConfig, writeConfig } from './hooks.js'
-import { readFileSync, existsSync } from 'fs'
-import { join } from 'path'
 
 const VALID_MODES = ['aggressive', 'balanced', 'subtle']
 
@@ -16,8 +14,8 @@ export function run() {
 
   program
     .name('ghost-mode')
-    .description('Invisible AI pair programmer for Claude Code')
-    .version('1.0.0')
+    .description('Non-blocking whisper hooks for Claude Code')
+    .version('2.0.0')
 
   program
     .command('install')
@@ -54,26 +52,12 @@ export function run() {
     .command('status')
     .description('Check if ghost mode is active in current project')
     .action(() => {
-      const settingsPath = join(process.cwd(), '.claude', 'settings.json')
-      if (!existsSync(settingsPath)) {
+      if (isInstalled()) {
+        const cfg = readConfig()
+        console.log(chalk.gray('\n  Ghost Mode: active'))
+        console.log(chalk.dim(`  Sensitivity: ${cfg.mode || 'balanced'}\n`))
+      } else {
         console.log(chalk.dim('\n  Ghost Mode: not installed\n'))
-        return
-      }
-      try {
-        const settings = JSON.parse(readFileSync(settingsPath, 'utf8'))
-        const hooks = settings.hooks || {}
-        const hasGhost = Object.values(hooks).some(
-          (arr) => Array.isArray(arr) && arr.some((h) => h.matcher === 'ghost-mode')
-        )
-        if (hasGhost) {
-          const cfg = readConfig()
-          console.log(chalk.gray('\n  Ghost Mode: active'))
-          console.log(chalk.dim(`  Sensitivity: ${cfg.mode || 'balanced'}\n`))
-        } else {
-          console.log(chalk.dim('\n  Ghost Mode: not installed\n'))
-        }
-      } catch {
-        console.log(chalk.dim('\n  Ghost Mode: unknown (could not parse settings)\n'))
       }
     })
 

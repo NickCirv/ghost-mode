@@ -1,4 +1,5 @@
 node_modules/
 .ghost-config.json
+test/.tmp-ts-fixture/
 *.log
 .DS_Store

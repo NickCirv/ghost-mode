@@ -1,7 +1,7 @@
 {
   "name": "ghost-mode",
-  "version": "1.0.0",
-  "description": "Invisible AI pair programmer — silent watchers that whisper when you need it",
+  "version": "2.0.0",
+  "description": "Non-blocking Claude Code hooks that whisper about secrets, console.log and TypeScript errors after edits",
   "type": "module",
   "bin": {
     "ghost-mode": "./bin/ghost.js"
@@ -13,14 +13,16 @@
   },
   "dependencies": {
     "chalk": "^5.3.0",
-    "commander": "^12.1.0",
-    "fs-extra": "^11.2.0"
+    "commander": "^12.1.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.0"
   },
   "keywords": [
     "claude-code",
     "hooks",
-    "ai",
-    "pair-programming",
+    "secrets",
+    "typescript",
     "developer-tools"
   ],
   "author": "NickCirv",
