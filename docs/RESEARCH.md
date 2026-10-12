@@ -1,5 +1,11 @@
 # ghost-mode — research record
 
+## 2026-10-12 update: v1 hook contract confirmed non-functional, rewritten in 2.0
+
+Runtime verification of revision `a3f33122bdfa8ad617753b9f8b7a0348fdfe690c` confirmed the suspicion recorded below: every generated hook command passed `"$CLAUDE_TOOL_INPUT_FILE_PATH"` or `"$CLAUDE_TOOL_INPUT_COMMAND"`, environment variables Claude Code does not set (verified against the [official hooks reference](https://code.claude.com/docs/en/hooks), which delivers the payload as JSON on stdin). Each script therefore hit its empty-argument guard and exited 0 with no output. Warnings were also written to stderr under exit 0, a channel Claude Code does not surface for PostToolUse. The hooks were silent no-ops in both directions.
+
+Version 2.0 rebuilt the three advertised whispers (secrets, console.log, TypeScript errors) on the stdin-JSON contract with exit-0 JSON output, removed the five v1 shell scripts, fixed the status detector defect noted below, and added an integration harness (`test/hooks.test.js`, `test/installer.test.js`; 25 tests executed passing on Node 26). Everything below this section describes the pre-2.0 revision and is retained as the historical record.
+
 ## Revision and scope
 
 - Repository: [NickCirv/ghost-mode](https://github.com/NickCirv/ghost-mode)

@@ -2,13 +2,11 @@
 
 [Overview](../README.md) · [Research record](RESEARCH.md)
 
-Describes revision `a3f33122bdfa8ad617753b9f8b7a0348fdfe690c`. Commands are source-inspected; no execution results are asserted.
+Describes version 2.0.0. Commands below were executed on this revision; the committed test suite (25 tests) exercises the hooks and the installer round-trip.
 
 ## Workflow
 
-Adds project .claude/settings.json hooks and supports install, uninstall, status and aggressive/balanced/subtle configurations. The bundled scripts check patterns such as console logging and secret-like text.
-
-Installation and config commands rewrite project settings. Review the bundled shell scripts and existing hooks before enabling them.
+`install` writes PostToolUse whisper hooks into the current project's `.claude/settings.json`. Each hook is a standalone Node script that reads the Claude Code hook payload from stdin and warns via exit-0 JSON output, per the [official hooks reference](https://code.claude.com/docs/en/hooks). Installation and config commands rewrite project settings; unrelated hooks are preserved and ghost entries from any prior version are replaced.
 
 ```bash
 node bin/ghost.js status
@@ -16,20 +14,29 @@ node bin/ghost.js status
 
 ## Commands and controls
 
-| Control | Behavior in the inspected implementation |
+| Control | Behavior |
 | --- | --- |
-| `status` | Inspect installation through the existing status detector |
-| `install --mode MODE` | Write hooks using aggressive, balanced or subtle mode |
+| `status` | Report whether ghost hooks (current or legacy format) exist in `./.claude/settings.json` |
+| `install --mode MODE` | Write hooks for aggressive, balanced or subtle mode |
 | `config MODE` | Update mode and reinstall hooks |
-| `uninstall` | Remove marked Ghost hooks |
+| `uninstall` | Remove ghost entries only |
+
+## Modes
+
+| Mode | Hooks installed |
+| --- | --- |
+| `subtle` | secret-whisper |
+| `balanced` (default) | secret-whisper, console-log-whisper |
+| `aggressive` | secret-whisper, console-log-whisper, type-error-whisper |
 
 ## Interpretation and side effects
 
-These are scripted checks, not an autonomous AI reviewer. The captured status implementation looks for matcher ghost-mode while generated hook matchers use tool names, so status can under-report an installation. Inspect settings directly when troubleshooting.
+These are scripted regex and compiler checks, not an autonomous AI reviewer. Every hook exits 0 unconditionally; warnings arrive as `systemMessage` (shown to the user) plus `hookSpecificOutput.additionalContext` (handed to Claude). Hooks are registered by absolute path into the clone, so re-run `install` if the clone moves. See the README section "What these hooks can and cannot see" for scope limits.
 
 ## Implementation reference
 
-- [package.json](https://github.com/NickCirv/ghost-mode/blob/a3f33122bdfa8ad617753b9f8b7a0348fdfe690c/package.json)
-- [bin/ghost.js](https://github.com/NickCirv/ghost-mode/blob/a3f33122bdfa8ad617753b9f8b7a0348fdfe690c/bin/ghost.js)
-- [src/index.js](https://github.com/NickCirv/ghost-mode/blob/a3f33122bdfa8ad617753b9f8b7a0348fdfe690c/src/index.js)
-- [test/smoke.test.js](https://github.com/NickCirv/ghost-mode/blob/a3f33122bdfa8ad617753b9f8b7a0348fdfe690c/test/smoke.test.js)
+- [package.json](../package.json)
+- [bin/ghost.js](../bin/ghost.js)
+- [src/hooks.js](../src/hooks.js) and [src/installer.js](../src/installer.js)
+- [src/scripts/](../src/scripts/) (the three whisper hooks and shared lib)
+- [test/hooks.test.js](../test/hooks.test.js) (integration harness)
