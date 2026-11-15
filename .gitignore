@@ -3,3 +3,6 @@ node_modules/
 test/.tmp-ts-fixture/
 *.log
 .DS_Store
+
+# Keeps a clean clone clean: a stranger runs npm install first.
+.env
